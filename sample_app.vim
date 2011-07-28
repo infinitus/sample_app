@@ -4,8 +4,8 @@ let s:cpo_save=&cpo
 set cpo&vim
 inoremap <silent> <S-Tab> =BackwardsSnippet()
 inoremap <C-Tab> 	
-nnoremap <silent>  :call CommentLine()
 vnoremap <silent>  :call RangeCommentLine()
+nnoremap <silent>  :call CommentLine()
 onoremap <silent>  :call CommentLine()
 nnoremap  h
 snoremap <silent> 	 i<Right>=TriggerSnippet()
@@ -13,9 +13,9 @@ nnoremap <NL> j
 nnoremap  k
 nnoremap  l
 nnoremap s :sp
-nnoremap <silent>  :call UnCommentLine()
 snoremap  b<BS>
 xnoremap <silent>  :call RangeUnCommentLine()
+nnoremap <silent>  :call UnCommentLine()
 onoremap <silent>  :call UnCommentLine()
 snoremap % b<BS>%
 snoremap ' b<BS>'
@@ -57,8 +57,9 @@ snoremap <Right> a
 snoremap <BS> b<BS>
 snoremap <silent> <S-Tab> i<Right>=BackwardsSnippet()
 nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)
-map <silent> <F7> :NERDTreeToggle
-nnoremap <F8> :!python %
+map <F7><F7> :NERDTreeToggle
+map <F6><F6> ,mbt
+nnoremap <F8><F8> :!./%
 imap S <Plug>ISurround
 imap s <Plug>Isurround
 inoremap <silent> 	 =TriggerSnippet()
@@ -83,6 +84,7 @@ set helplang=en
 set hlsearch
 set ignorecase
 set incsearch
+set iskeyword=@,48-57,_,192-255,$
 set lazyredraw
 set printoptions=paper:letter
 set ruler
@@ -108,16 +110,20 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +1 public/hello.html
-badd +1 public/index.html
+badd +3 app/controllers/application_controller.rb
 badd +10 app/controllers/pages_controller.rb
-badd +1 app/views/pages/home.html.erb
-badd +16 spec/controllers/pages_controller_spec.rb
-badd +2 spec/spec_helper.rb
-badd +1 config/routes.rb
-badd +2 app/views/pages/about.html.erb
-badd +2 app/controllers/application_controller.rb
-args public/hello.html
+badd +7 app/controllers/users_controller.rb
+badd +21 app/models/user.rb
+badd +2 app/views/layouts/_footer.html.erb
+badd +1 app/views/layouts/_header.html.erb
+badd +1 app/views/layouts/_stylesheets.html.erb
+badd +15 app/views/layouts/application.html.erb
+badd +1 config.ru
+badd +2 config/routes.rb
+badd +53 spec/models/user_spec.rb
+badd +0 db/migrate/20110728071211_add_email_uniqueness_index.rb
+badd +1 app/views/users/show.html.erb
+silent! argdel *
 edit config/routes.rb
 set splitbelow splitright
 wincmd _ | wincmd |
@@ -128,29 +134,47 @@ wincmd _ | wincmd |
 vsplit
 1wincmd h
 wincmd w
+wincmd _ | wincmd |
+split
+1wincmd k
+wincmd w
 set nosplitbelow
 set nosplitright
 wincmd t
 set winheight=1 winwidth=1
 exe '1resize ' . ((&lines * 2 + 28) / 56)
 exe '2resize ' . ((&lines * 51 + 28) / 56)
-exe 'vert 2resize ' . ((&columns * 78 + 78) / 156)
-exe '3resize ' . ((&lines * 51 + 28) / 56)
-exe 'vert 3resize ' . ((&columns * 77 + 78) / 156)
+exe 'vert 2resize ' . ((&columns * 31 + 78) / 156)
+exe '3resize ' . ((&lines * 25 + 28) / 56)
+exe 'vert 3resize ' . ((&columns * 124 + 78) / 156)
+exe '4resize ' . ((&lines * 25 + 28) / 56)
+exe 'vert 4resize ' . ((&columns * 124 + 78) / 156)
 argglobal
 enew
 file -MiniBufExplorer-
 let s:cpo_save=&cpo
 set cpo&vim
 nnoremap <buffer> 	 :call search('\[[0-9]*:[^\]]*\]'):<BS>
+nmap <buffer> gf <Plug>RailsTabFind
+nmap <buffer> f <Plug>RailsSplitFind
+nmap <buffer> [f <Plug>RailsAlternate
+nmap <buffer> ]f <Plug>RailsRelated
+nmap <buffer> gf <Plug>RailsFind
 nnoremap <buffer> h :call search('\[[0-9]*:[^\]]*\]','b'):<BS>
 nnoremap <buffer> j gj
 nnoremap <buffer> k gk
 nnoremap <buffer> l :call search('\[[0-9]*:[^\]]*\]'):<BS>
 nnoremap <buffer> p :wincmd p:<BS>
-nnoremap <buffer> <Down> gj
-nnoremap <buffer> <Up> gk
 nnoremap <buffer> <S-Tab> :call search('\[[0-9]*:[^\]]*\]','b'):<BS>
+nnoremap <buffer> <Up> gk
+nnoremap <buffer> <Down> gj
+nnoremap <buffer> <silent> <Plug>RailsTabFind :RTfind
+nnoremap <buffer> <silent> <Plug>RailsVSplitFind :RVfind
+nnoremap <buffer> <silent> <Plug>RailsSplitFind :RSfind
+nnoremap <buffer> <silent> <Plug>RailsFind :REfind
+nnoremap <buffer> <silent> <Plug>RailsRelated :R
+nnoremap <buffer> <silent> <Plug>RailsAlternate :A
+cnoremap <buffer> <expr>  fugitive#buffer().rev()
 let &cpo=s:cpo_save
 unlet s:cpo_save
 setlocal keymap=
@@ -199,11 +223,11 @@ setlocal grepprg=
 setlocal iminsert=0
 setlocal imsearch=0
 setlocal include=
-setlocal includeexpr=
+setlocal includeexpr=RailsIncludeexpr()
 setlocal indentexpr=
 setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
 setlocal noinfercase
-setlocal iskeyword=@,48-57,_,192-255
+setlocal iskeyword=@,48-57,_,192-255,$
 setlocal keywordprg=
 set linebreak
 setlocal linebreak
@@ -218,7 +242,7 @@ set number
 setlocal nonumber
 setlocal numberwidth=4
 setlocal omnifunc=
-setlocal path=
+setlocal path=.,~/Codes/rails_projects/sample_app,~/Codes/rails_projects/sample_app/app,~/Codes/rails_projects/sample_app/app/models,~/Codes/rails_projects/sample_app/app/controllers,~/Codes/rails_projects/sample_app/app/helpers,~/Codes/rails_projects/sample_app/config,~/Codes/rails_projects/sample_app/lib,~/Codes/rails_projects/sample_app/app/views,~/Codes/rails_projects/sample_app/spec,~/Codes/rails_projects/sample_app/spec/models,~/Codes/rails_projects/sample_app/spec/controllers,~/Codes/rails_projects/sample_app/spec/helpers,~/Codes/rails_projects/sample_app/spec/views,~/Codes/rails_projects/sample_app/spec/lib,~/Codes/rails_projects/sample_app/spec/requests,~/Codes/rails_projects/sample_app/spec/integration,~/Codes/rails_projects/sample_app/app/*,~/Codes/rails_projects/sample_app/vendor,~/Codes/rails_projects/sample_app/vendor/plugins/*/lib,~/Codes/rails_projects/sample_app/vendor/plugins/*/test,~/Codes/rails_projects/sample_app/vendor/rails/*/lib,~/Codes/rails_projects/sample_app/vendor/rails/*/test,/usr/include,
 setlocal nopreserveindent
 setlocal nopreviewwindow
 setlocal quoteescape=\\
@@ -235,19 +259,135 @@ setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
 setlocal spellfile=
 setlocal spelllang=en
 setlocal statusline=%!g:statusLineText
-setlocal suffixesadd=
+setlocal suffixesadd=.rb,.rhtml,.erb,.rxml,.builder,.rjs,.mab,.liquid,.haml,.dryml,.mn,.css,.js,.yml,.csv,.rake,.sql,.html,.xml
 setlocal noswapfile
 setlocal synmaxcol=3000
 if &syntax != ''
 setlocal syntax=
 endif
 setlocal tabstop=4
-setlocal tags=
+setlocal tags=~/Codes/rails_projects/sample_app/tmp/tags,./tags,./TAGS,tags,TAGS,~/Codes/rails_projects/sample_app/tags,~/Codes/rails_projects/sample_app/.git/tags
 setlocal textwidth=0
 setlocal thesaurus=
 setlocal winfixheight
 setlocal winfixwidth
 setlocal wrap
+setlocal wrapmargin=0
+wincmd w
+argglobal
+enew
+file NERD_tree_1
+let s:cpo_save=&cpo
+set cpo&vim
+nmap <buffer> gf <Plug>RailsTabFind
+nmap <buffer> f <Plug>RailsSplitFind
+nmap <buffer> [f <Plug>RailsAlternate
+nmap <buffer> ]f <Plug>RailsRelated
+nmap <buffer> gf <Plug>RailsFind
+nnoremap <buffer> <silent> <Plug>RailsTabFind :RTfind
+nnoremap <buffer> <silent> <Plug>RailsVSplitFind :RVfind
+nnoremap <buffer> <silent> <Plug>RailsSplitFind :RSfind
+nnoremap <buffer> <silent> <Plug>RailsFind :REfind
+nnoremap <buffer> <silent> <Plug>RailsRelated :R
+nnoremap <buffer> <silent> <Plug>RailsAlternate :A
+cnoremap <buffer> <expr>  fugitive#buffer().rev()
+let &cpo=s:cpo_save
+unlet s:cpo_save
+setlocal keymap=
+setlocal noarabic
+setlocal autoindent
+setlocal nobinary
+setlocal bufhidden=
+setlocal nobuflisted
+setlocal buftype=nofile
+setlocal nocindent
+setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
+setlocal cinoptions=
+setlocal cinwords=if,else,while,do,for,switch
+setlocal comments=s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-
+setlocal commentstring=/*%s*/
+setlocal complete=.,w,b,u,t,i
+setlocal completefunc=
+setlocal nocopyindent
+setlocal nocursorcolumn
+setlocal cursorline
+setlocal define=
+setlocal dictionary=
+setlocal nodiff
+setlocal equalprg=
+setlocal errorformat=
+setlocal expandtab
+if &filetype != 'nerdtree'
+setlocal filetype=nerdtree
+endif
+setlocal foldcolumn=0
+setlocal foldenable
+setlocal foldexpr=0
+setlocal foldignore=#
+set foldlevel=99
+setlocal foldlevel=99
+setlocal foldmarker={{{,}}}
+set foldmethod=indent
+setlocal foldmethod=indent
+setlocal foldminlines=1
+setlocal foldnestmax=20
+setlocal foldtext=foldtext()
+setlocal formatexpr=
+setlocal formatoptions=tcq
+setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
+setlocal grepprg=
+setlocal iminsert=0
+setlocal imsearch=0
+setlocal include=
+setlocal includeexpr=RailsIncludeexpr()
+setlocal indentexpr=
+setlocal indentkeys=0{,0},:,0#,!^F,o,O,e
+setlocal noinfercase
+setlocal iskeyword=@,48-57,_,192-255
+setlocal keywordprg=
+set linebreak
+setlocal linebreak
+setlocal nolisp
+setlocal nolist
+setlocal makeprg=
+setlocal matchpairs=(:),{:},[:]
+setlocal modeline
+setlocal nomodifiable
+setlocal nrformats=octal,hex
+set number
+setlocal nonumber
+setlocal numberwidth=4
+setlocal omnifunc=
+setlocal path=.,~/Codes/rails_projects/sample_app,~/Codes/rails_projects/sample_app/app,~/Codes/rails_projects/sample_app/app/models,~/Codes/rails_projects/sample_app/app/controllers,~/Codes/rails_projects/sample_app/app/helpers,~/Codes/rails_projects/sample_app/config,~/Codes/rails_projects/sample_app/lib,~/Codes/rails_projects/sample_app/app/views,~/Codes/rails_projects/sample_app/spec,~/Codes/rails_projects/sample_app/spec/models,~/Codes/rails_projects/sample_app/spec/controllers,~/Codes/rails_projects/sample_app/spec/helpers,~/Codes/rails_projects/sample_app/spec/views,~/Codes/rails_projects/sample_app/spec/lib,~/Codes/rails_projects/sample_app/spec/requests,~/Codes/rails_projects/sample_app/spec/integration,~/Codes/rails_projects/sample_app/app/*,~/Codes/rails_projects/sample_app/vendor,~/Codes/rails_projects/sample_app/vendor/plugins/*/lib,~/Codes/rails_projects/sample_app/vendor/plugins/*/test,~/Codes/rails_projects/sample_app/vendor/rails/*/lib,~/Codes/rails_projects/sample_app/vendor/rails/*/test,/usr/include
+setlocal nopreserveindent
+setlocal nopreviewwindow
+setlocal quoteescape=\\
+setlocal noreadonly
+setlocal norightleft
+setlocal rightleftcmd=search
+setlocal noscrollbind
+setlocal shiftwidth=4
+setlocal noshortname
+setlocal nosmartindent
+setlocal softtabstop=4
+setlocal nospell
+setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
+setlocal spellfile=
+setlocal spelllang=en
+setlocal statusline=%{exists('b:NERDTreeRoot')?b:NERDTreeRoot.path.str():''}
+setlocal suffixesadd=.rb,.rhtml,.erb,.rxml,.builder,.rjs,.mab,.liquid,.haml,.dryml,.mn,.css,.js,.yml,.csv,.rake,.sql,.html,.xml
+setlocal noswapfile
+setlocal synmaxcol=3000
+if &syntax != 'nerdtree'
+setlocal syntax=nerdtree
+endif
+setlocal tabstop=4
+setlocal tags=~/Codes/rails_projects/sample_app/tmp/tags,./tags,./TAGS,tags,TAGS,~/Codes/rails_projects/sample_app/tags,~/Codes/rails_projects/sample_app/.git/tags
+setlocal textwidth=0
+setlocal thesaurus=
+setlocal nowinfixheight
+setlocal winfixwidth
+setlocal nowrap
 setlocal wrapmargin=0
 wincmd w
 argglobal
@@ -378,15 +518,17 @@ setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-let s:l = 10 - ((9 * winheight(0) + 25) / 51)
+2
+normal zo
+let s:l = 3 - ((2 * winheight(0) + 12) / 25)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-10
+3
 normal! 0
 wincmd w
 argglobal
-edit spec/controllers/pages_controller_spec.rb
+edit db/migrate/20110728071211_add_email_uniqueness_index.rb
 let s:cpo_save=&cpo
 set cpo&vim
 nmap <buffer> gf <Plug>RailsTabFind
@@ -453,7 +595,7 @@ setlocal includeexpr=RailsIncludeexpr()
 setlocal indentexpr=GetRubyIndent()
 setlocal indentkeys=0{,0},0),0],!^F,o,O,e,=end,=elsif,=when,=ensure,=rescue,==begin,==end
 setlocal noinfercase
-setlocal iskeyword=@,48-57,_,192-255
+setlocal iskeyword=@,48-57,_,192-255,$
 setlocal keywordprg=ri
 set linebreak
 setlocal linebreak
@@ -468,7 +610,7 @@ set number
 setlocal number
 setlocal numberwidth=4
 setlocal omnifunc=
-setlocal path=.,~/Codes/rails_projects/sample_app,~/Codes/rails_projects/sample_app/app,~/Codes/rails_projects/sample_app/app/models,~/Codes/rails_projects/sample_app/app/controllers,~/Codes/rails_projects/sample_app/app/helpers,~/Codes/rails_projects/sample_app/config,~/Codes/rails_projects/sample_app/lib,~/Codes/rails_projects/sample_app/app/views,~/Codes/rails_projects/sample_app/app/views/pages,~/Codes/rails_projects/sample_app/public,~/Codes/rails_projects/sample_app/spec,~/Codes/rails_projects/sample_app/spec/models,~/Codes/rails_projects/sample_app/spec/controllers,~/Codes/rails_projects/sample_app/spec/helpers,~/Codes/rails_projects/sample_app/spec/views,~/Codes/rails_projects/sample_app/spec/lib,~/Codes/rails_projects/sample_app/spec/requests,~/Codes/rails_projects/sample_app/spec/integration,~/Codes/rails_projects/sample_app/app/*,~/Codes/rails_projects/sample_app/vendor,~/Codes/rails_projects/sample_app/vendor/plugins/*/lib,~/Codes/rails_projects/sample_app/vendor/plugins/*/test,~/Codes/rails_projects/sample_app/vendor/rails/*/lib,~/Codes/rails_projects/sample_app/vendor/rails/*/test,NOTE:\\\ Gem.all_load_paths\\\ is\\\ deprecated\\\ with\\\ no\\\ replacement.\\\ It\\\ will\\\ be\\\ removed\\\ on\\\ or\\\ after\\\ 2011-10-01.\
+setlocal path=.,~/Codes/rails_projects/sample_app,~/Codes/rails_projects/sample_app/app,~/Codes/rails_projects/sample_app/app/models,~/Codes/rails_projects/sample_app/app/controllers,~/Codes/rails_projects/sample_app/app/helpers,~/Codes/rails_projects/sample_app/config,~/Codes/rails_projects/sample_app/lib,~/Codes/rails_projects/sample_app/app/views,~/Codes/rails_projects/sample_app/spec,~/Codes/rails_projects/sample_app/spec/models,~/Codes/rails_projects/sample_app/spec/controllers,~/Codes/rails_projects/sample_app/spec/helpers,~/Codes/rails_projects/sample_app/spec/views,~/Codes/rails_projects/sample_app/spec/lib,~/Codes/rails_projects/sample_app/spec/requests,~/Codes/rails_projects/sample_app/spec/integration,~/Codes/rails_projects/sample_app/app/*,~/Codes/rails_projects/sample_app/vendor,~/Codes/rails_projects/sample_app/vendor/plugins/*/lib,~/Codes/rails_projects/sample_app/vendor/plugins/*/test,~/Codes/rails_projects/sample_app/vendor/rails/*/lib,~/Codes/rails_projects/sample_app/vendor/rails/*/test,NOTE:\\\ Gem.all_load_paths\\\ is\\\ deprecated\\\ with\\\ no\\\ replacement.\\\ It\\\ will\\\ be\\\ removed\\\ on\\\ or\\\ after\\\ 2011-10-01.\
 Gem.all_load_paths\\\ called\\\ from\\\ -e:1.\
 NOTE:\\\ Gem.all_partials\\\ is\\\ deprecated\\\ with\\\ no\\\ replacement.\\\ It\\\ will\\\ be\\\ removed\\\ on\\\ or\\\ after\\\ 2011-10-01.\
 Gem.all_partials\\\ called\\\ from\\\ ~/.rvm/rubies/ruby-1.9.2-p290/lib/ruby/site_ruby/1.9.1/rubygems.rb:258.\
@@ -507,25 +649,36 @@ if &syntax != 'ruby'
 setlocal syntax=ruby
 endif
 setlocal tabstop=4
-setlocal tags=~/Codes/rails_projects/sample_app/tmp/tags,./tags,./TAGS,tags,TAGS,~/Codes/rails_projects/sample_app/tags,~/Codes/rails_projects/sample_app/.git/ruby.tags,~/Codes/rails_projects/sample_app/.git/tags
+setlocal tags=~/Codes/rails_projects/sample_app/tmp/tags,./tags,./TAGS,tags,TAGS,~/Codes/rails_projects/sample_app/tags,~/Codes/rails_projects/sample_app/.git/tags
 setlocal textwidth=0
 setlocal thesaurus=
 setlocal nowinfixheight
 setlocal nowinfixwidth
 setlocal wrap
 setlocal wrapmargin=0
-let s:l = 20 - ((19 * winheight(0) + 25) / 51)
+2
+normal zo
+3
+normal zo
+7
+normal zo
+2
+normal zo
+let s:l = 7 - ((6 * winheight(0) + 12) / 25)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-20
-normal! 0
+7
+normal! 026l
 wincmd w
+3wincmd w
 exe '1resize ' . ((&lines * 2 + 28) / 56)
 exe '2resize ' . ((&lines * 51 + 28) / 56)
-exe 'vert 2resize ' . ((&columns * 78 + 78) / 156)
-exe '3resize ' . ((&lines * 51 + 28) / 56)
-exe 'vert 3resize ' . ((&columns * 77 + 78) / 156)
+exe 'vert 2resize ' . ((&columns * 31 + 78) / 156)
+exe '3resize ' . ((&lines * 25 + 28) / 56)
+exe 'vert 3resize ' . ((&columns * 124 + 78) / 156)
+exe '4resize ' . ((&lines * 25 + 28) / 56)
+exe 'vert 4resize ' . ((&columns * 124 + 78) / 156)
 tabnext 1
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
