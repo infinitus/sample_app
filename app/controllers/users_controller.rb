@@ -4,8 +4,12 @@ class UsersController < ApplicationController
   before_filter :admin_user,   :only => [:destroy]
 
   def new
-    @title = "Sign up"
-    @user = User.new
+    unless signed_in?
+      @title = "Sign up"
+      @user = User.new
+    else
+      redirect_to root_path
+    end
   end
 
   def index
@@ -19,6 +23,7 @@ class UsersController < ApplicationController
   end
 
   def create
+    unless signed_in?
     @user = User.new(params[:user])
     if @user.save
       sign_in @user
@@ -29,6 +34,9 @@ class UsersController < ApplicationController
       @user.password = ""
       @user.password_confirmation = ""
       render 'new'
+    end
+    else
+      redirect_to root_path
     end
   end
 
