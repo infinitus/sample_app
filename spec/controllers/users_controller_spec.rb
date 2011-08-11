@@ -50,6 +50,23 @@ describe UsersController do
         response.should have_selector("a", :href => "/users?page=2",
                                            :content => "Next")
       end
+
+      it "should not contain delete links" do
+        get :index
+        response.should_not have_selector("a", :content => "delete")
+      end
+    end
+
+    describe "for admin users" do
+
+      before(:each) do
+        @user = test_sign_in(Factory(:user, :admin => true))
+      end
+
+      it "should contain delete links" do
+        get :index
+        response.should have_selector("a", :content => "delete")
+      end
     end
   end
 
