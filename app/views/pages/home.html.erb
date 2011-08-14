@@ -1,4 +1,7 @@
 <% if signed_in? %>
+  <% content_for :head do %>
+    <%= javascript_include_tag "character_counter" %>
+  <% end %>
   <table class="front" summary="For signed-in users">
     <tr>
       <td class="main">
